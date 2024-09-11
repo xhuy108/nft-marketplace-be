@@ -1,29 +1,19 @@
 const mongoose = require("mongoose");
 const logger = require("../utils/logger");
+const dotenv = require("dotenv");
 
-const {
-  MONGO_USERNAME,
-  MONGO_PASSWORD,
-  MONGO_HOST,
-  MONGO_PORT,
-  MONGO_DATABASE,
-  NODE_ENV,
-} = process.env;
+dotenv.config();
+
+const { MONGO_USERNAME, MONGO_PASSWORD, NODE_ENV } = process.env;
 
 const options = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useCreateIndex: true,
-  useFindAndModify: false,
   autoIndex: NODE_ENV === "development",
-  poolSize: 10,
-  bufferMaxEntries: 0,
   connectTimeoutMS: 10000,
   socketTimeoutMS: 45000,
   family: 4,
 };
 
-const uri = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
+const uri = `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster0.uzy9p.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0`;
 
 const connect = async () => {
   try {
@@ -49,6 +39,8 @@ const connect = async () => {
     process.exit(1);
   }
 };
+
+connect();
 
 module.exports = {
   connect,
