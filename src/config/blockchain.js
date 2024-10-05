@@ -1,6 +1,6 @@
-const Web3 = require("web3");
-const HDWalletProvider = require("@truffle/hdwallet-provider");
-const logger = require("../utils/logger");
+import Web3, { utils } from "web3";
+import HDWalletProvider from "@truffle/hdwallet-provider";
+import { warn } from "../utils/logger";
 
 const {
   INFURA_PROJECT_ID,
@@ -58,8 +58,8 @@ const validateNetwork = async () => {
 
 const getGasPrice = async () => {
   const gasPrice = await getWeb3().eth.getGasPrice();
-  return Web3.utils.toBN(
-    Math.min(gasPrice, Web3.utils.toWei(GAS_PRICE_GWEI, "gwei"))
+  return utils.toBN(
+    Math.min(gasPrice, utils.toWei(GAS_PRICE_GWEI, "gwei"))
   );
 };
 
@@ -70,7 +70,7 @@ const sendTransaction = async (tx) => {
       const receipt = await getWeb3().eth.sendTransaction(tx);
       return receipt;
     } catch (error) {
-      logger.warn(
+      warn(
         `Transaction failed. Attempt ${
           attempts + 1
         }/${RETRY_ATTEMPTS}. Error: ${error.message}`
@@ -84,7 +84,7 @@ const sendTransaction = async (tx) => {
   }
 };
 
-module.exports = {
+export default {
   getWeb3,
   validateNetwork,
   getGasPrice,

@@ -1,8 +1,5 @@
 const mongoose = require("mongoose");
 const logger = require("../utils/logger");
-const dotenv = require("dotenv");
-
-dotenv.config();
 
 const { MONGO_USERNAME, MONGO_PASSWORD, NODE_ENV } = process.env;
 
@@ -39,8 +36,6 @@ const connect = async () => {
     process.exit(1);
   }
 };
-
-connect();
 
 module.exports = {
   connect,
