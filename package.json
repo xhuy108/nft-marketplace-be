@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "test": "jest",
-    "start": "node src/server.js",
+    "start": "nodemon src/server.js",
     "dev": "nodemon src/server.js",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -39,7 +39,8 @@
     "winston": "^3.14.2",
     "winston-daily-rotate-file": "^5.0.0",
     "xss-clean": "^0.1.4",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "cloudinary": "^2.2.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
