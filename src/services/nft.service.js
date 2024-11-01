@@ -1,5 +1,5 @@
 const NFT = require('../models/nft.model')
-
+const uploadToPinata = require('./pitana.service');
 const test = () => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -21,7 +21,7 @@ const test = () => {
 const createNFT = (newNFT) => {
     return new Promise(async (resolve, reject) => {
         try {
-            // const { name, description, image, creator, owner, price, currency, tokenId, contractAddress, blockchain, metadataURI, tags, category, attributes, likes, saleHistory } = newNFT
+            // const { name, description, image, creator, owner, price, currency, tokenId, contractAddress, blockchain, tags, category, attributes, likes, saleHistory } = newNFT
             // const createNFT = await NFT.create({
             //     name,
             //     description,
@@ -40,7 +40,16 @@ const createNFT = (newNFT) => {
             //     likes,
             //     saleHistory
             // })
-            const { name, description, image, price, currency, tokenId, contractAddress, blockchain, metadataURI, tags, category, attributes, likes, saleHistory } = newNFT
+
+
+            const { name, description, image, price, currency, tokenId, contractAddress, blockchain, tags, category, attributes, likes, saleHistory } = newNFT
+
+            // Bước 1: Tạo metadata JSON
+            const metadata = { name, description, image };
+
+            // Bước 2: Lưu metadata lên Pinata
+            const metadataURI = await uploadToPinata(metadata, name);
+
             const createNFT = await NFT.create({
                 name,
                 description,

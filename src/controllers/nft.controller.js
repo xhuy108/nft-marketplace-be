@@ -15,16 +15,16 @@ const test = async (req, res) => {
 
 const createNFT = async (req, res) => {
     try {
-        // const { name, description, image, creator, owner, price, currency, tokenId, contractAddress, blockchain, metadataURI, tags, category, attributes, likes, saleHistory } = req.body
-        // if (!name || !description || !image || !creator || !owner || !price || !currency || !tokenId || !contractAddress || !blockchain || !metadataURI || !category) {
+        // const { name, description, image, creator, owner, price, currency, tokenId, contractAddress, blockchain, tags, category, attributes, likes, saleHistory } = req.body
+        // if (!name || !description || !image || !creator || !owner || !price || !currency || !tokenId || !contractAddress || !blockchain || !category) {
         //     return res.status(200).json({
         //         status: "ERR",
         //         message: "The input is required"
         //     })
         // }
 
-        const { name, description, image, price, currency, tokenId, contractAddress, blockchain, metadataURI, category } = req.body
-        if (!name || !description || !image || !price || !currency || !tokenId || !contractAddress || !blockchain || !metadataURI || !category) {
+        const { name, description, image, price, currency, tokenId, contractAddress, blockchain, category } = req.body
+        if (!name || !description || !image || !price || !currency || !tokenId || !contractAddress || !blockchain || !category) {
             return res.status(200).json({
                 status: "ERR",
                 message: "The input is required"

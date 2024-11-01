@@ -18,16 +18,16 @@ const NFTSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please provide an image URL for the NFT"],
     },
-    creator: {
-      type: mongoose.Schema.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    owner: {
-      type: mongoose.Schema.ObjectId,
-      ref: "User",
-      required: true,
-    },
+    // creator: {
+    //   type: mongoose.Schema.ObjectId,
+    //   ref: "User",
+    //   required: true,
+    // },
+    // owner: {
+    //   type: mongoose.Schema.ObjectId,
+    //   ref: "User",
+    //   required: true,
+    // },
     price: {
       type: Number,
       required: [true, "Please provide a price for the NFT"],

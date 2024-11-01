@@ -11,10 +11,11 @@ const uploadImages = (images) => {
                         reject(error);
                     }
                     if (result) {
-                        resultImage.push({
-                            publicId: result.public_id,
-                            url: result.url
-                        })
+                        resultImage.push(
+                            // publicId: result.public_id,
+                            // url: result.url
+                            result.url
+                        )
                     }
                 });
 
@@ -24,7 +25,6 @@ const uploadImages = (images) => {
                 status: "OK",
                 message: "success",
                 data: resultImage,
-
             })
 
 
