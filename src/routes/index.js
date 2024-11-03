@@ -1,6 +1,6 @@
 const express = require("express");
 const authRoutes = require("./api/v1/auth.route");
-//const nftRoutes = require("./nfts");
+const nftRoutes = require("./api/v1/nft.route");
 //const userRoutes = require("./users");
 //const marketplaceRoutes = require("./marketplace");
 //const { authenticateJWT } = require("../middleware/auth");
@@ -17,6 +17,7 @@ const API_VERSION = "/api/v1";
 
 // Public routes
 router.use(`${API_VERSION}/auth`, authRoutes);
+router.use(`${API_VERSION}/nfts`, nftRoutes);
 
 // // Protected routes
 // // router.use(`${API_VERSION}/nfts`, authenticateJWT, nftRoutes);
