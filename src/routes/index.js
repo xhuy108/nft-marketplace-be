@@ -1,6 +1,9 @@
 const express = require("express");
 const authRoutes = require("./api/v1/auth.route");
-const nftRoutes = require("./api/v1/nft.route");
+const collectionRoutes = require("./api/v1/collection.route");
+
+// const nftRoutes = require("./api/v1/nft.route");
+// const collectionRoutes = require("./api/v1/collection.route");
 //const userRoutes = require("./users");
 //const marketplaceRoutes = require("./marketplace");
 //const { authenticateJWT } = require("../middleware/auth");
@@ -17,12 +20,11 @@ const API_VERSION = "/api/v1";
 
 // Public routes
 router.use(`${API_VERSION}/auth`, authRoutes);
-router.use(`${API_VERSION}/nfts`, nftRoutes);
+router.use(`${API_VERSION}/collections`, collectionRoutes);
 
-// // Protected routes
-// // router.use(`${API_VERSION}/nfts`, authenticateJWT, nftRoutes);
-// // router.use(`${API_VERSION}/users`, authenticateJWT, userRoutes);
-// // router.use(`${API_VERSION}/marketplace`, authenticateJWT, marketplaceRoutes);
+// router.use(`${API_VERSION}/nfts`, nftRoutes);
+// router.use(`${API_VERSION}/collection`, collectionRoutes);
+
 
 // 404 handler
 router.use((req, res, next) => {

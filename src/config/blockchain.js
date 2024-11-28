@@ -47,20 +47,9 @@ const getWeb3 = () => {
   return web3;
 };
 
-const validateNetwork = async () => {
-  const chainId = await getWeb3().eth.chainId();
-  if (chainId !== parseInt(CHAIN_ID)) {
-    throw new Error(
-      `Invalid network. Expected chain ID ${CHAIN_ID}, got ${chainId}`
-    );
-  }
-};
-
 const getGasPrice = async () => {
   const gasPrice = await getWeb3().eth.getGasPrice();
-  return utils.toBN(
-    Math.min(gasPrice, utils.toWei(GAS_PRICE_GWEI, "gwei"))
-  );
+  return utils.toBN(Math.min(gasPrice, utils.toWei(GAS_PRICE_GWEI, "gwei")));
 };
 
 const sendTransaction = async (tx) => {
@@ -86,7 +75,6 @@ const sendTransaction = async (tx) => {
 
 export default {
   getWeb3,
-  validateNetwork,
   getGasPrice,
   sendTransaction,
   CONTRACT_ADDRESS,
