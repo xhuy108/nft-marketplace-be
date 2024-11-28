@@ -10,10 +10,32 @@ async function main() {
     } (chainId: ${network.chainId.toString()})`
   );
 
-  // Deploy NFTCollectionFactory first
+  // Deploy CategoryLib first
+  console.log("Deploying CategoryLib...");
+  const CategoryLib = await hre.ethers.getContractFactory("CategoryLib");
+  const categoryLib = await CategoryLib.deploy();
+  await categoryLib.waitForDeployment();
+  const categoryLibAddress = await categoryLib.getAddress();
+  console.log(`CategoryLib deployed to: ${categoryLibAddress}`);
+
+  // Deploy StatsLib next
+  console.log("Deploying StatsLib...");
+  const StatsLib = await hre.ethers.getContractFactory("StatsLib");
+  const statsLib = await StatsLib.deploy();
+  await statsLib.waitForDeployment();
+  const statsLibAddress = await statsLib.getAddress();
+  console.log(`StatsLib deployed to: ${statsLibAddress}`);
+
+  // Link libraries to NFTCollectionFactory
   console.log("Deploying NFTCollectionFactory...");
   const NFTCollectionFactory = await hre.ethers.getContractFactory(
-    "NFTCollectionFactory"
+    "NFTCollectionFactory",
+    {
+      libraries: {
+        CategoryLib: categoryLibAddress,
+        StatsLib: statsLibAddress,
+      },
+    }
   );
   const factory = await NFTCollectionFactory.deploy();
   await factory.waitForDeployment();
@@ -61,6 +83,8 @@ async function main() {
   const deploymentInfo = {
     network: network.name,
     chainId: network.chainId.toString(),
+    categoryLibAddress: categoryLibAddress,
+    statsLibAddress: statsLibAddress,
     factoryAddress: factoryAddress,
     marketplaceAddress: marketplaceAddress,
     deploymentDate: new Date().toISOString(),
