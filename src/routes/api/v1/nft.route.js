@@ -6,13 +6,13 @@ const NFTController = require("../../../controllers/nft.controler");
 // const { authenticateUser } = require("../middlewares/auth.middleware");
 
 router.post(
-  "/collections/:collectionAddress/mint",
+  "/:collectionAddress/mint",
   upload.single("image"),
   NFTController.mintNFT
 );
 
 router.get(
-  "/collections/:collectionAddress+:tokenId",
+  "/:collectionAddress+:tokenId",
   NFTController.getNFTMetadata
 );
 
