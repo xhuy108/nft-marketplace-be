@@ -11,9 +11,9 @@ router.post(
   NFTController.mintNFT
 );
 
-router.get(
-  "/:collectionAddress+:tokenId",
-  NFTController.getNFTMetadata
-);
+// router.get(
+//   "/:collectionAddress+:tokenId",
+//   NFTController.getNFTMetadata
+// );
 
 module.exports = router;
