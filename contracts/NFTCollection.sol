@@ -10,7 +10,7 @@ contract NFTCollection is ERC721URIStorage {
     address public immutable factory;
     uint256 private _nextTokenId;
     string public collectionURI;
-    
+
     event NFTMinted(
         uint256 indexed tokenId,
         address indexed creator,
@@ -47,7 +47,7 @@ contract NFTCollection is ERC721URIStorage {
         _;
     }
 
-    function mint( string memory tokenURI) external returns (uint256) {
+    function mint(string memory tokenURI) external returns (uint256) {
         console.log("sender");
         console.log(msg.sender);
         console.log("creator");
@@ -58,7 +58,6 @@ contract NFTCollection is ERC721URIStorage {
         // _safeMint(creator, tokenId);
 
         _safeMint(creator, tokenId);
-        
 
         _setTokenURI(tokenId, tokenURI);
         emit NFTMinted(tokenId, creator, tokenURI);
@@ -76,13 +75,11 @@ contract NFTCollection is ERC721URIStorage {
         emit CollectionMetadataUpdated(address(this), newCollectionURI);
     }
 
-    function getCollectionInfo() external view returns (
-        address _creator,
-        string memory _collectionURI
-    ) {
-        return (
-            creator,
-            collectionURI
-        );
+    function getCollectionInfo()
+        external
+        view
+        returns (address _creator, string memory _collectionURI)
+    {
+        return (creator, collectionURI);
     }
 }
