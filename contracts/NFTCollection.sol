@@ -3,83 +3,38 @@ pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "hardhat/console.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract NFTCollection is ERC721URIStorage {
-    address public immutable creator;
-    address public immutable factory;
-    uint256 private _nextTokenId;
-    string public collectionURI;
 
-    event NFTMinted(
-        uint256 indexed tokenId,
-        address indexed creator,
-        string tokenURI
-    );
-
-    event CollectionMetadataUpdated(
-        address indexed collection,
-        string newCollectionURI
-    );
-
-    error OnlyCreator();
-    error OnlyFactory();
-    error InvalidTokenURI();
-
+contract NFTCollection is ERC721URIStorage, Ownable {
+    uint256 private _tokenIds;
+    string public baseURI;
+    address public marketplaceAddress;
+    string public category;  // Added category field
+    
     constructor(
         string memory name,
         string memory symbol,
-        address _creator,
-        string memory _collectionURI
-    ) ERC721(name, symbol) {
-        creator = _creator;
-        factory = msg.sender;
-        collectionURI = _collectionURI;
+        string memory _baseURI,
+        address _marketplaceAddress,
+        string memory _category,  // Added category parameter
+        address initialOwner
+    ) ERC721(name, symbol) Ownable(initialOwner) {
+        baseURI = _baseURI;
+        marketplaceAddress = _marketplaceAddress;
+        category = _category;  // Set the category
     }
 
-    modifier onlyCreator() {
-        if (msg.sender != creator) revert OnlyCreator();
-        _;
+    function mint(address to, string memory tokenURI) public onlyOwner returns (uint256) {
+        _tokenIds++;
+        uint256 newTokenId = _tokenIds;
+        _safeMint(to, newTokenId);
+        _setTokenURI(newTokenId, tokenURI);
+        return newTokenId;
     }
 
-    modifier onlyFactory() {
-        if (msg.sender != factory) revert OnlyFactory();
-        _;
-    }
-
-    function mint(string memory tokenURI) external returns (uint256) {
-        console.log("sender");
-        console.log(msg.sender);
-        console.log("creator");
-        console.log(creator);
-        require(msg.sender == creator, "Only creator can mint");
-        if (bytes(tokenURI).length == 0) revert InvalidTokenURI();
-        uint256 tokenId = _nextTokenId++;
-        // _safeMint(creator, tokenId);
-
-        _safeMint(creator, tokenId);
-
-        _setTokenURI(tokenId, tokenURI);
-        emit NFTMinted(tokenId, creator, tokenURI);
-        return tokenId;
-    }
-
-    function approveMarketplace(address marketplace) external {
-        // This will approve the marketplace for all tokens owned by the caller
-        setApprovalForAll(marketplace, true);
-    }
-
-    function updateCollectionURI(string calldata newCollectionURI) external {
-        // require(msg.sender == creator, "Only creator can update metadata");
-        collectionURI = newCollectionURI;
-        emit CollectionMetadataUpdated(address(this), newCollectionURI);
-    }
-
-    function getCollectionInfo()
-        external
-        view
-        returns (address _creator, string memory _collectionURI)
-    {
-        return (creator, collectionURI);
+    function totalSupply() public view returns (uint256) {
+        return _tokenIds;
     }
 }
