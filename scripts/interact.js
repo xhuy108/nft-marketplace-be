@@ -2,12 +2,12 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const [deployer, buyer] = await ethers.getSigners();
   console.log("Interacting with contracts with account:", deployer.address);
 
   try {
     // Get the deployed marketplace contract - UPDATE THIS ADDRESS
-    const MARKETPLACE_ADDRESS = "0x0B306BF915C4d645ff596e518fAf3F9669b97016"; // Your newly deployed address
+    const MARKETPLACE_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Your newly deployed address
     const Marketplace = await ethers.getContractFactory("NFTMarketplace");
     const marketplace = Marketplace.attach(MARKETPLACE_ADDRESS);
     const marketplaceAddress = await marketplace.getAddress();
@@ -31,6 +31,44 @@ async function main() {
     console.log("Waiting for collection creation transaction...");
     const receipt = await createCollectionTx.wait();
     console.log("Transaction receipt:", receipt.hash);
+
+    // Create another collection to test multiple collections
+    console.log("\nCreating second test collection...");
+    const createCollection2Tx = await marketplace.createCollection(
+      "Test Collection 2",
+      "TEST2",
+      "ipfs://QmQ4uN6aPnaMSktcajD1m9U6rnrrgYGVWN6bDi24NXED1p",
+      "Gaming"
+    );
+    await createCollection2Tx.wait();
+
+    // Fetch user created collection
+    console.log("\nFetching collections created by deployer...");
+    const userCollections = await marketplace.fetchUserCreatedCollections(
+      deployer.address
+    );
+    console.log(`Total collections created by user: ${userCollections.length}`);
+
+    // Log each user collection's details
+    console.log("\nUser Created Collections:");
+    userCollections.forEach((collection, index) => {
+      console.log(`\nCollection ${index + 1}:`);
+      console.log("- Address:", collection.basic.collectionAddress);
+      console.log("- Name:", collection.basic.name);
+      console.log("- Symbol:", collection.basic.symbol);
+      console.log("- Category:", collection.basic.category);
+      console.log("- Base URI:", collection.basic.baseURI);
+      console.log("- Floor Price:", ethers.formatEther(collection.floorPrice));
+      console.log(
+        "- Total Volume:",
+        ethers.formatEther(collection.totalVolume)
+      );
+      console.log("- Owner Count:", collection.ownerCount.toString());
+      console.log(
+        "- Created At:",
+        new Date(Number(collection.basic.createdAt) * 1000).toLocaleString()
+      );
+    });
 
     // Get collections after creation
     console.log("\nFetching collections...");
@@ -142,6 +180,36 @@ async function main() {
       console.log("- Price:", ethers.formatEther(item.price));
       console.log("- Seller:", item.seller);
       console.log("- Is on sale:", item.isOnSale);
+    });
+
+    console.log("\nMaking purchase with buyer account...");
+    const purchaseTx = await marketplace
+      .connect(buyer)
+      .createMarketSale(collectionAddress, tokenId, {
+        value: ethers.parseEther("0.1"),
+      });
+    const purchaseReceipt = await purchaseTx.wait();
+    console.log("Purchase successful, transaction:", purchaseReceipt.hash);
+
+    // Verify new owner
+    const newOwner = await nftContract.ownerOf(tokenId);
+    console.log("New NFT owner:", newOwner);
+    console.log("Buyer address:", buyer.address);
+
+    // Get user's purchased items
+    console.log("\nFetching buyer's purchased items...");
+    const purchasedItems = await marketplace.fetchUserPurchasedItems(
+      buyer.address
+    );
+    console.log("Total items purchased by buyer:", purchasedItems.length);
+
+    // Display purchased items details
+    purchasedItems.forEach((item, index) => {
+      console.log(`\nPurchased Item ${index + 1}:`);
+      console.log("- Collection Address:", item.nftContract);
+      console.log("- Token ID:", item.tokenId.toString());
+      console.log("- Price Paid:", ethers.formatEther(item.price), "ETH");
+      console.log("- Token URI:", item.tokenURI);
     });
   } catch (error) {
     console.error("\nError during interaction:");
