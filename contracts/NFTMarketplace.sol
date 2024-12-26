@@ -48,6 +48,16 @@ contract NFTMarketplace is ReentrancyGuard, Pausable, Ownable {
         uint256 timestamp;
     }
 
+    struct SearchResult {
+        address collectionAddress;
+        string name;
+        string symbol;
+        string category;
+        uint256 totalSupply;
+        uint256 floorPrice;
+        bool isActive;
+    }
+
     // Category management
     string[] private categories;
     mapping(string => bool) private categoryExists;
@@ -439,4 +449,157 @@ function _getUniqueOwnerCount(address collectionAddress) private view returns (u
         address indexed buyer,
         uint256 price
     );
+
+    // Simple search collections function
+    function searchCollections(string memory searchTerm) 
+        public 
+        view 
+        returns (SearchResult[] memory) 
+    {
+        return _searchWithFilters(searchTerm, "", 0, 0);
+    }
+
+    // Advanced search with filters
+    function searchCollectionsWithFilters(
+        string memory searchTerm,
+        string memory category,
+        uint256 minFloorPrice,
+        uint256 maxFloorPrice
+    ) 
+        public 
+        view 
+        returns (SearchResult[] memory) 
+    {
+        return _searchWithFilters(searchTerm, category, minFloorPrice, maxFloorPrice);
+    }
+
+    // Internal search function
+    function _searchWithFilters(
+        string memory searchTerm,
+        string memory category,
+        uint256 minFloorPrice,
+        uint256 maxFloorPrice
+    ) 
+        internal 
+        view 
+        returns (SearchResult[] memory) 
+    {
+        uint256 resultCount = 0;
+        
+        // Count matching collections first
+        for (uint256 i = 0; i < collectionAddresses.length; i++) {
+            Collection memory col = collections[collectionAddresses[i]];
+            if (!col.isActive) continue;
+
+            uint256 floorPrice = _getFloorPrice(collectionAddresses[i]);
+            
+            if (_matchesSearchCriteria(col, searchTerm, category, floorPrice, minFloorPrice, maxFloorPrice)) {
+                resultCount++;
+            }
+        }
+
+        // Create array and populate results
+        SearchResult[] memory results = new SearchResult[](resultCount);
+        uint256 currentIndex = 0;
+
+        for (uint256 i = 0; i < collectionAddresses.length && currentIndex < resultCount; i++) {
+            Collection memory col = collections[collectionAddresses[i]];
+            if (!col.isActive) continue;
+
+            uint256 floorPrice = _getFloorPrice(collectionAddresses[i]);
+            
+            if (_matchesSearchCriteria(col, searchTerm, category, floorPrice, minFloorPrice, maxFloorPrice)) {
+                results[currentIndex] = SearchResult({
+                    collectionAddress: col.collectionAddress,
+                    name: col.name,
+                    symbol: col.symbol,
+                    category: col.category,
+                    totalSupply: col.totalSupply,
+                    floorPrice: floorPrice,
+                    isActive: true
+                });
+                currentIndex++;
+            }
+        }
+
+        return results;
+    }
+
+    // Helper function to check if collection matches search criteria
+    function _matchesSearchCriteria(
+        Collection memory col,
+        string memory searchTerm,
+        string memory category,
+        uint256 floorPrice,
+        uint256 minFloorPrice,
+        uint256 maxFloorPrice
+    ) 
+        internal 
+        pure 
+        returns (bool) 
+    {
+        // Check search term
+        bool matchesSearch = bytes(searchTerm).length == 0 ||
+                           _containsIgnoreCase(col.name, searchTerm) ||
+                           _containsIgnoreCase(col.symbol, searchTerm);
+
+        // Check category
+        bool matchesCategory = bytes(category).length == 0 ||
+                             _containsIgnoreCase(col.category, category);
+
+        // Check price range
+        bool matchesPrice = (minFloorPrice == 0 || floorPrice >= minFloorPrice) &&
+                          (maxFloorPrice == 0 || floorPrice <= maxFloorPrice);
+
+        return matchesSearch && matchesCategory && matchesPrice;
+    }
+
+    // Optimized case-insensitive string comparison
+    function _containsIgnoreCase(
+        string memory _base,
+        string memory _search
+    ) 
+        internal 
+        pure 
+        returns (bool) 
+    {
+        bytes memory base = bytes(_base);
+        bytes memory search = bytes(_search);
+        
+        if (search.length == 0) return true;
+        if (base.length < search.length) return false;
+
+        for (uint256 i = 0; i <= base.length - search.length; i++) {
+            bool found = true;
+            
+            for (uint256 j = 0; j < search.length; j++) {
+                bytes1 b = base[i + j];
+                bytes1 s = search[j];
+                
+                // Convert to lowercase if uppercase
+                if (b >= 0x41 && b <= 0x5A) b |= 0x20;
+                if (s >= 0x41 && s <= 0x5A) s |= 0x20;
+                
+                if (b != s) {
+                    found = false;
+                    break;
+                }
+            }
+            
+            if (found) return true;
+        }
+        
+        return false;
+    }
+
+    function updateCollectionTotalSupply(address collectionAddress) external {
+        require(collections[collectionAddress].isActive, "Collection does not exist");
+        require(
+            msg.sender == collectionAddress,
+            "Only collection contract can update its supply"
+        );
+        
+        uint256 newTotalSupply = NFTCollection(collectionAddress).totalSupply();
+        collections[collectionAddress].totalSupply = newTotalSupply;
+    }
 }
