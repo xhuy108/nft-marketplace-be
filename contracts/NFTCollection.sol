@@ -11,14 +11,14 @@ contract NFTCollection is ERC721URIStorage, Ownable {
     uint256 private _tokenIds;
     string public baseURI;
     address public marketplaceAddress;
-    string public category;  // Added category field
+    string public category;  
     
     constructor(
         string memory name,
         string memory symbol,
         string memory _baseURI,
         address _marketplaceAddress,
-        string memory _category,  // Added category parameter
+        string memory _category,  
         address initialOwner
     ) ERC721(name, symbol) Ownable(initialOwner) {
         baseURI = _baseURI;

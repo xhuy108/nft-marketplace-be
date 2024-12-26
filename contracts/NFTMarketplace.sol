@@ -64,6 +64,10 @@ contract NFTMarketplace is ReentrancyGuard, Pausable, Ownable {
     
     mapping(address => mapping(uint256 => mapping(address => uint256))) private pendingReturns;
     mapping(address => mapping(uint256 => Offer[])) private itemOffers;
+
+    mapping(address => address[]) private userCreatedCollections;
+    mapping(address => mapping(address => mapping(uint256 => bool))) private userPurchases; // user -> collection -> tokenId -> bool
+    mapping(address => uint256) private userPurchaseCount;
     
     uint256 public listingFee = 0.0005 ether;
 
@@ -113,52 +117,98 @@ contract NFTMarketplace is ReentrancyGuard, Pausable, Ownable {
         return categories;
     }
 
-    function createCollection(
-    string memory name,
-    string memory symbol,
-    string memory baseURI,
-    string memory category
-) public returns (address) {
-    require(categoryExists[category], "Invalid category");
     
-    address collectionOwner = msg.sender;
+    function fetchUserCreatedCollections(address user) 
+        public 
+        view 
+        returns (CollectionDetails[] memory) 
+    {
+        address[] memory userCollections = userCreatedCollections[user];
+        CollectionDetails[] memory details = new CollectionDetails[](userCollections.length);
+        
+        for (uint256 i = 0; i < userCollections.length; i++) {
+            details[i] = fetchCollectionDetails(userCollections[i]);
+        }
+        
+        return details;
+    }
 
-    NFTCollection newCollection = new NFTCollection(
-        name,
-        symbol,
-        baseURI,
-        address(this),
-        category,
-        collectionOwner
-    );
-    
-    address collectionAddress = address(newCollection);
-    
-    collections[collectionAddress] = Collection({
-        collectionAddress: collectionAddress,
-        name: name,
-        symbol: symbol,
-        category: category,
-        owner: collectionOwner,
-        isActive: true,
-        createdAt: block.timestamp,
-        baseURI: baseURI,
-        totalSupply: 0
-    });
-    
-    collectionAddresses.push(collectionAddress);
-    categoryToCollections[category].push(collectionAddress);
-    
-    emit CollectionCreated(
-        collectionAddress,
-        name,
-        symbol,
-        category,
-        collectionOwner
-    );
-    
-    return collectionAddress;
-}
+   
+    function fetchUserPurchasedItems(address user) 
+        public 
+        view 
+        returns (MarketItem[] memory purchasedItems) 
+    {
+        uint256 totalItemCount = userPurchaseCount[user];
+        uint256 currentIndex = 0;
+        purchasedItems = new MarketItem[](totalItemCount);
+
+        // Iterate through all collections
+        for (uint256 i = 0; i < collectionAddresses.length; i++) {
+            address collectionAddress = collectionAddresses[i];
+            uint256[] memory tokenIds = collectionTokenIds[collectionAddress];
+            
+            // Check each token in the collection
+            for (uint256 j = 0; j < tokenIds.length; j++) {
+                uint256 tokenId = tokenIds[j];
+                if (userPurchases[user][collectionAddress][tokenId]) {
+                    purchasedItems[currentIndex] = collectionToMarketItems[collectionAddress][tokenId];
+                    currentIndex++;
+                }
+            }
+        }
+
+        return purchasedItems;
+    }
+
+    function createCollection(
+        string memory name,
+        string memory symbol,
+        string memory baseURI,
+        string memory category
+    ) public returns (address) {
+        require(categoryExists[category], "Invalid category");
+        
+        address collectionOwner = msg.sender;
+
+        NFTCollection newCollection = new NFTCollection(
+            name,
+            symbol,
+            baseURI,
+            address(this),
+            category,
+            collectionOwner
+        );
+        
+        address collectionAddress = address(newCollection);
+        
+        collections[collectionAddress] = Collection({
+            collectionAddress: collectionAddress,
+            name: name,
+            symbol: symbol,
+            category: category,
+            owner: collectionOwner,
+            isActive: true,
+            createdAt: block.timestamp,
+            baseURI: baseURI,
+            totalSupply: 0
+        });
+        
+        collectionAddresses.push(collectionAddress);
+        categoryToCollections[category].push(collectionAddress);
+        
+        emit CollectionCreated(
+            collectionAddress,
+            name,
+            symbol,
+            category,
+            collectionOwner
+        );
+
+        userCreatedCollections[msg.sender].push(collectionAddress);
+
+        return collectionAddress;
+    }
 
     function createMarketItem(
         address collectionAddress,
@@ -249,7 +299,7 @@ function _getFloorPrice(address collectionAddress) private view returns (uint256
 
 function _getTotalVolume(address collectionAddress) private view returns (uint256) {
     // Implementation for calculating total trading volume
-    return 0; // Placeholder
+    return 0; 
 }
 
 function _getUniqueOwnerCount(address collectionAddress) private view returns (uint256) {
@@ -294,6 +344,9 @@ function _getUniqueOwnerCount(address collectionAddress) private view returns (u
         payable(item.seller).transfer(msg.value);
         IERC721(collectionAddress).transferFrom(address(this), msg.sender, tokenId);
 
+        userPurchases[msg.sender][collectionAddress][tokenId] = true;
+        userPurchaseCount[msg.sender]++;
+        
         emit MarketItemSold(
             collectionAddress,
             tokenId,

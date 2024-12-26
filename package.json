@@ -1,5 +1,5 @@
 {
-  "name": "nft-marketplace-be",
+  "name": "nft-marketplace-contracts",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
