@@ -7,7 +7,7 @@ async function main() {
 
   try {
     // Get the deployed marketplace contract - UPDATE THIS ADDRESS
-    const MARKETPLACE_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Your newly deployed address
+    const MARKETPLACE_ADDRESS = "0x5eb3Bc0a489C5A8288765d2336659EbCA68FCd00"; // Your newly deployed address
     const Marketplace = await ethers.getContractFactory("NFTMarketplace");
     const marketplace = Marketplace.attach(MARKETPLACE_ADDRESS);
     const marketplaceAddress = await marketplace.getAddress();
@@ -126,32 +126,99 @@ async function main() {
       throw new Error("No contract found at the collection address");
     }
 
-    // Mint an NFT
-    console.log("\nMinting NFT...");
-    const mintTx = await nftContract.mint(
+    // Check initial total supply before minting
+    console.log("\nChecking initial total supply...");
+    const initialCollection = await marketplace.getCollectionDetails(
+      nftContractAddress
+    );
+    console.log(
+      "Initial total supply:",
+      initialCollection.totalSupply.toString()
+    );
+
+    // Mint first NFT
+    console.log("\nMinting first NFT...");
+    const mintTx1 = await nftContract.mint(
       deployer.address,
       "ipfs://QmaFuGuPyjK5aB7DK2GpZid4rwPmmvwECEaqyYJkhqNo6B"
     );
-    const mintReceipt = await mintTx.wait();
-    console.log("NFT minted, transaction:", mintReceipt.hash);
+    const mintReceipt1 = await mintTx1.wait();
+    console.log("First NFT minted, transaction:", mintReceipt1.hash);
+
+    // Check total supply after first mint
+    const collectionAfterFirstMint = await marketplace.getCollectionDetails(
+      nftContractAddress
+    );
+    console.log(
+      "Total supply after first mint:",
+      collectionAfterFirstMint.totalSupply.toString()
+    );
+
+    // Mint second NFT
+    console.log("\nMinting second NFT...");
+    const mintTx2 = await nftContract.mint(
+      deployer.address,
+      "ipfs://QmaFuGuPyjK5aB7DK2GpZid4rwPmmvwECEaqyYJkhqNo6B"
+    );
+    const mintReceipt2 = await mintTx2.wait();
+    console.log("Second NFT minted, transaction:", mintReceipt2.hash);
+
+    // Check total supply after second mint
+    const collectionAfterSecondMint = await marketplace.getCollectionDetails(
+      nftContractAddress
+    );
+    console.log(
+      "Total supply after second mint:",
+      collectionAfterSecondMint.totalSupply.toString()
+    );
+
+    // Verify total supply consistency
+    const nftContractTotalSupply = await nftContract.totalSupply();
+    console.log("\nVerifying total supply consistency:");
+    console.log(
+      "NFT Contract total supply:",
+      nftContractTotalSupply.toString()
+    );
+    console.log(
+      "Marketplace collection total supply:",
+      collectionAfterSecondMint.totalSupply.toString()
+    );
+
+    if (
+      nftContractTotalSupply.toString() !==
+      collectionAfterSecondMint.totalSupply.toString()
+    ) {
+      throw new Error(
+        "Total supply mismatch between NFT contract and marketplace!"
+      );
+    }
+    console.log(
+      "✅ Total supply is consistent between NFT contract and marketplace"
+    );
 
     // Verify NFT ownership
-    const tokenId = 1; // Assuming this is the first NFT
-    const owner = await nftContract.ownerOf(tokenId);
-    console.log("NFT owner:", owner);
+    const firstTokenId = 1;
+    const secondTokenId = 2;
+    const firstTokenOwner = await nftContract.ownerOf(firstTokenId);
+    const secondTokenOwner = await nftContract.ownerOf(secondTokenId);
+    console.log("First NFT owner:", firstTokenOwner);
+    console.log("Second NFT owner:", secondTokenOwner);
 
     // Approve marketplace
     console.log("\nApproving marketplace...");
     console.log("NFT Contract:", nftContractAddress);
     console.log("Marketplace Address:", marketplaceAddress);
-    console.log("Token ID:", tokenId);
+    console.log("Token ID:", firstTokenId);
 
-    const approveTx = await nftContract.approve(marketplaceAddress, tokenId);
+    const approveTx = await nftContract.approve(
+      marketplaceAddress,
+      firstTokenId
+    );
     const approveReceipt = await approveTx.wait();
     console.log("Marketplace approved, transaction:", approveReceipt.hash);
 
     // Verify approval
-    const approved = await nftContract.getApproved(tokenId);
+    const approved = await nftContract.getApproved(firstTokenId);
     console.log("Approved address:", approved);
 
     // Create market item
@@ -161,7 +228,7 @@ async function main() {
 
     const createMarketItemTx = await marketplace.createMarketItem(
       collectionAddress,
-      tokenId,
+      firstTokenId,
       ethers.parseEther("0.1"),
       { value: listingFee }
     );
@@ -185,14 +252,14 @@ async function main() {
     console.log("\nMaking purchase with buyer account...");
     const purchaseTx = await marketplace
       .connect(buyer)
-      .createMarketSale(collectionAddress, tokenId, {
+      .createMarketSale(collectionAddress, firstTokenId, {
         value: ethers.parseEther("0.1"),
       });
     const purchaseReceipt = await purchaseTx.wait();
     console.log("Purchase successful, transaction:", purchaseReceipt.hash);
 
     // Verify new owner
-    const newOwner = await nftContract.ownerOf(tokenId);
+    const newOwner = await nftContract.ownerOf(firstTokenId);
     console.log("New NFT owner:", newOwner);
     console.log("Buyer address:", buyer.address);
 
@@ -211,12 +278,108 @@ async function main() {
       console.log("- Price Paid:", ethers.formatEther(item.price), "ETH");
       console.log("- Token URI:", item.tokenURI);
     });
+
+    // Test search functionality
+    console.log("\n=== Testing Search Functionality ===");
+
+    // 1. Basic Search by Name
+    console.log("\nTesting basic search by name 'Test'...");
+    const basicSearchResults = await marketplace.searchCollections("Test");
+    console.log(
+      "Basic search results:",
+      formatSearchResults(basicSearchResults)
+    );
+
+    // 2. Search with empty string (should return all collections)
+    console.log("\nTesting search with empty string...");
+    const allCollectionsResults = await marketplace.searchCollections("");
+    console.log(
+      "All collections search results:",
+      formatSearchResults(allCollectionsResults)
+    );
+
+    // 3. Search by Symbol
+    console.log("\nTesting search by symbol 'TEST'...");
+    const symbolSearchResults = await marketplace.searchCollections("TEST");
+    console.log(
+      "Symbol search results:",
+      formatSearchResults(symbolSearchResults)
+    );
+
+    console.log("\n==== Testing Search Functionality ====");
+
+    try {
+      console.log("\nVerifying search function existence...");
+      const contractCode = await ethers.provider.getCode(marketplaceAddress);
+      console.log("Contract deployed at:", marketplaceAddress);
+
+      // Test collection search
+      console.log("\n1. Testing basic collection search...");
+
+      // First, let's log all collections to verify they exist
+      console.log("\nVerifying existing collections...");
+      const allCollections = await marketplace.fetchCollections();
+      console.log("Total collections available:", allCollections.length);
+
+      // Test case-insensitive search for "test"
+      console.log("\n2. Searching for collections with 'Test'");
+      const searchResults = await marketplace.fetchCollectionsByCategory("Art");
+      console.log("\nSearch results:", searchResults.length);
+
+      if (searchResults.length > 0) {
+        searchResults.forEach((result, index) => {
+          console.log(`\nResult ${index + 1}:`);
+          console.log("- Collection Address:", result.collectionAddress);
+          console.log("- Name:", result.name);
+          console.log("- Symbol:", result.symbol);
+          console.log("- Category:", result.category);
+          console.log("- Total Supply:", result.totalSupply);
+        });
+      } else {
+        console.log("No collections found matching the search criteria");
+      }
+
+      // Try searching by category
+      console.log("\n3. Testing category-specific search...");
+      const artCollections = await marketplace.fetchCollectionsByCategory(
+        "Art"
+      );
+      console.log("\nArt category collections:", artCollections.length);
+
+      if (artCollections.length > 0) {
+        artCollections.forEach((collection, index) => {
+          console.log(`\nArt Collection ${index + 1}:`);
+          console.log("- Name:", collection.name);
+          console.log("- Category:", collection.category);
+          console.log("- Total Supply:", collection.totalSupply);
+        });
+      } else {
+        console.log("No Art collections found");
+      }
+    } catch (error) {
+      console.error("\nError during search testing:");
+      if (error.reason) console.error("Reason:", error.reason);
+      if (error.data) console.error("Error data:", error.data);
+      console.error(error);
+    }
   } catch (error) {
     console.error("\nError during interaction:");
     if (error.reason) console.error("Reason:", error.reason);
     if (error.data) console.error("Error data:", error.data);
     console.error(error);
   }
+}
+
+function formatSearchResults(results) {
+  return results.map((result) => ({
+    address: result.collectionAddress,
+    name: result.name,
+    symbol: result.symbol,
+    category: result.category,
+    totalSupply: result.totalSupply.toString(),
+    floorPrice: ethers.formatEther(result.floorPrice),
+    isActive: result.isActive,
+  }));
 }
 
 main()

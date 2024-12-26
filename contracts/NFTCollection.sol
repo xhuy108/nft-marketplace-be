@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+interface IMarketplace {
+    function updateCollectionTotalSupply(address collection) external;
+}
 
 contract NFTCollection is ERC721URIStorage, Ownable {
     uint256 private _tokenIds;
@@ -31,6 +34,8 @@ contract NFTCollection is ERC721URIStorage, Ownable {
         uint256 newTokenId = _tokenIds;
         _safeMint(to, newTokenId);
         _setTokenURI(newTokenId, tokenURI);
+        IMarketplace(marketplaceAddress).updateCollectionTotalSupply(address(this));
+
         return newTokenId;
     }
 
